@@ -1,0 +1,190 @@
+import java.util.*;
+import java.util.stream.Collectors;
+
+class Airport
+{
+    String name;
+    String country;
+    String code;
+    int passengers;
+
+    public Airport(String name, String country, String code, int passengers) {
+        this.name = name;
+        this.country = country;
+        this.code = code;
+        this.passengers = passengers;
+    }
+
+    @Override
+    public String toString() {
+        return name+ " ("+code+")\n"+country+"\n"+passengers;
+    }
+}
+class Flight
+{
+    String from;
+    String to;
+    int time;
+    int duration;
+    String getTimeS(int t, int d)
+    {
+        int h=t/60;
+        int m=t%60;
+        int hh=d/60;
+        int mm=d%60;
+        if(h+hh>=24)
+        {
+            if(m+mm>=60)
+            {
+                return String.format("%02d:%02d-%02d:%02d +1d ",h,m,h+hh-24+1,m+mm-60);
+            }
+            return String.format("%02d:%02d-%02d:%02d +1d ",h,m,h+hh-24,m+mm);
+        }else {
+            if (m + mm >= 60) {
+                if(h+hh+1>=24)
+                {
+                    return String.format("%02d:%02d-%02d:%02d +1d ", h, m, h + hh-24 + 1, m + mm - 60);
+
+                }
+                else {
+                    return String.format("%02d:%02d-%02d:%02d ", h, m, h + hh + 1, m + mm - 60);
+                }
+            }
+            return String.format("%02d:%02d-%02d:%02d ", h, m, hh + h, m + mm);
+        }
+    }
+    String getDuration()
+    {
+        int h=duration/60;
+        int min=duration%60;
+        return String.format("%dh%02dm",h,min);
+    }
+
+    public String getTo() {
+        return to;
+    }
+
+    public Flight(String from, String to, int time, int duration) {
+        this.from = from;
+        this.to = to;
+        this.time = time;
+        this.duration = duration;
+    }
+
+    public int getTime() {
+        return time;
+    }
+
+    @Override
+    public String toString() {
+
+        return String.format("%s-%s %s%s",from,to,getTimeS(time,duration),getDuration());
+    }
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash();
+    }
+
+}
+class Airports
+{
+    List<Airport> airports=new ArrayList<>();
+    Map<String,Set<Flight>> flights=new TreeMap<>();
+    public void addAirport(String name, String country, String code, int passengers) {
+        Airport a = new Airport(name, country, code, passengers);
+        airports.add(a);
+    }
+    public void addFlights(String from, String to, int time, int duration) {
+
+        Flight f = new Flight(from, to, time, duration);
+        flights.putIfAbsent(to,new TreeSet<>(Comparator.comparing(Flight::getTime)));
+        flights.get(to).add(f);
+    }
+    public void showFlightsFromAirport(String code) {
+        for (int i = 0; i < airports.size(); i++) {
+            if (airports.get(i).code.equals(code)) {
+                System.out.println(airports.get(i));
+                break;
+            }
+        }
+        int j=1;
+        List<Flight> list=flights.values().stream().flatMap(Set::stream).collect(Collectors.toList());
+        for(Flight f:list)
+        {
+            if(f.from.equals(code))
+            {
+                System.out.printf("%d. %s\n",j++,f);
+            }
+        }
+    }
+    public void showDirectFlightsFromTo(String from, String to)
+    {
+        int flag=0;
+        List<Flight> list=flights.values().stream().flatMap(Set::stream).collect(Collectors.toList());
+         for(Flight f:list)
+         {
+             if(f.from.equals(from)&&f.to.equals(to))
+             {
+                 System.out.println(f);
+                 flag=1;
+             }
+         }
+         if(flag==0)
+         {
+             System.out.println("No flights from "+from+" to "+to);
+         }
+    }
+    public void showDirectFlightsTo(String to)
+    {
+        List<Flight> flights1=flights.get(to).stream().collect(Collectors.toList());
+        for(Flight f:flights1)
+        {
+            System.out.println(f);
+        }
+    }
+}
+public class AirportsTest {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        Airports airports = new Airports();
+        int n = scanner.nextInt();
+        scanner.nextLine();
+        String[] codes = new String[n];
+        for (int i = 0; i < n; ++i) {
+            String al = scanner.nextLine();
+            String[] parts = al.split(";");
+            airports.addAirport(parts[0], parts[1], parts[2], Integer.parseInt(parts[3]));
+            codes[i] = parts[2];
+        }
+        int nn = scanner.nextInt();
+        scanner.nextLine();
+        for (int i = 0; i < nn; ++i) {
+            String fl = scanner.nextLine();
+            String[] parts = fl.split(";");
+            airports.addFlights(parts[0], parts[1], Integer.parseInt(parts[2]), Integer.parseInt(parts[3]));
+        }
+        int f = scanner.nextInt();
+        int t = scanner.nextInt();
+        String from = codes[f];
+        String to = codes[t];
+        System.out.printf("===== FLIGHTS FROM %S =====\n", from);
+        airports.showFlightsFromAirport(from);
+        System.out.printf("===== DIRECT FLIGHTS FROM %S TO %S =====\n", from, to);
+        airports.showDirectFlightsFromTo(from, to);
+        t += 5;
+        t = t % n;
+        to = codes[t];
+        System.out.printf("===== DIRECT FLIGHTS TO %S =====\n", to);
+        airports.showDirectFlightsTo(to);
+    }
+}
+
+// vashiot kod ovde
+
