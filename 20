@@ -1,0 +1,163 @@
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.util.*;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
+
+/**
+ * I partial exam 2016
+ */
+class Day {
+    int day;
+    Double[] temperatures;
+    char scale;
+    Double average;
+    Double min;
+    Double max;
+
+    public int getDay() {
+        return day;
+    }
+
+    public void setScale(char scale) {
+        this.scale = scale;
+    }
+
+    public Day(int day, Double[] temperatures, char scale) {
+        this.temperatures = temperatures;
+        this.day = day;
+        this.scale = scale;
+    }
+
+    void average(char S) {
+        if (S == scale) {
+            average = Arrays.stream(temperatures).mapToDouble(Double::doubleValue).average().getAsDouble();
+        } else if (S == 'F'&&scale=='C') {
+            Double[] doubles = new Double[temperatures.length];
+            for (int i = 0; i < temperatures.length; i++) {
+                doubles[i] = (temperatures[i] * 9) / 5 + 32;
+            }
+            average = Arrays.stream(doubles).mapToDouble(Double::doubleValue).average().getAsDouble();
+        } else if(S=='C'&&scale=='F'){
+            Double[] doubles = new Double[temperatures.length];
+            for (int i = 0; i < temperatures.length; i++) {
+                doubles[i] = (temperatures[i] - 32) * 5 / 9;
+            }
+            average = Arrays.stream(doubles).mapToDouble(Double::doubleValue).average().getAsDouble();
+        }
+    }
+
+    int count() {
+        return (int) Arrays.stream(temperatures).count();
+    }
+
+    void max(char S) {
+        if (S == scale) {
+            max = Arrays.stream(temperatures).mapToDouble(Double::doubleValue).max().getAsDouble();
+        } else if (S == 'F'&&scale=='C') {
+            Double[] doubles = new Double[temperatures.length];
+            for (int i = 0; i < temperatures.length; i++) {
+                doubles[i] = (temperatures[i] * 9) / 5 + 32;
+            }
+            max = Arrays.stream(doubles).mapToDouble(Double::doubleValue).max().getAsDouble();
+        } else if(S=='C'&&scale=='F'){
+            Double[] doubles = new Double[temperatures.length];
+            for (int i = 0; i < temperatures.length; i++) {
+                doubles[i] = (temperatures[i] - 32) * 5 / 9;
+            }
+            max = Arrays.stream(doubles).mapToDouble(Double::doubleValue).max().getAsDouble();
+        }
+    }
+
+    void min(char S) {
+        if (S == scale) {
+            min = Arrays.stream(temperatures).mapToDouble(Double::doubleValue).min().getAsDouble();
+        } else if (S == 'F'&&scale=='C') {
+            Double[] doubles = new Double[temperatures.length];
+            for (int i = 0; i < temperatures.length; i++) {
+                doubles[i] = (temperatures[i] * 9) / 5 + 32;
+            }
+            min = Arrays.stream(doubles).mapToDouble(Double::doubleValue).min().getAsDouble();
+        } else if(S=='C'&&scale=='F'){
+            Double[] doubles = new Double[temperatures.length];
+            for (int i = 0; i < temperatures.length; i++) {
+                doubles[i] = (temperatures[i] - 32) * 5 / 9;
+            }
+            min = Arrays.stream(doubles).mapToDouble(Double::doubleValue).min().getAsDouble();
+        }
+    }
+
+    public Double getAverage() {
+        return average;
+    }
+
+    public Double getMin() {
+        return min;
+    }
+
+    public Double getMax() {
+        return max;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%3d: Count:%4d Min:%7.2f%c Max:%7.2f%c Avg:%7.2f%c", day, count(), getMin(),scale, getMax(),scale, getAverage(), scale);
+    }
+}
+class DailyTemperatures{
+    List<Day> days;
+    DailyTemperatures(){
+      days=new ArrayList<>();
+    }
+    void readTemperatures(InputStream inputStream){
+        Scanner sc=new Scanner(inputStream);
+         while (sc.hasNextLine())
+         {
+             String s= sc.nextLine();
+             //System.out.println(s);
+             char scale=s.charAt(s.length()-1);
+             String[] strings;
+             if(scale=='C') {
+                 strings = s.split("[\\s,C]+");
+             }
+             else {
+                 strings = s.split("[\\s,F]+");
+
+             }
+             Double [] temperatures=new Double[strings.length-1];
+             for(int i=0;i<temperatures.length;i++)
+             {
+                 temperatures[i]=Double.parseDouble(strings[i+1]);
+             }
+             //System.out.println(Arrays.toString(temperatures));
+           //  temperatures=Arrays.stream(strings).mapToDouble(Double::parseDouble).collect();
+             Day day=new Day(Integer.parseInt(strings[0]),temperatures,scale);
+             days.add(day);
+         }
+    }
+    void writeDailyStats(OutputStream outputStream, char scale){
+        PrintWriter pw=new PrintWriter(outputStream);
+        List<Day> days2=days;
+        days2.forEach(i->i.average(scale));
+        days2.forEach(i->i.min(scale));
+        days2.forEach(i->i.max(scale));
+        List<Day> days1=days2.stream().sorted(Comparator.comparing(Day::getDay)).collect(Collectors.toList());
+        for(Day d:days1) {
+            pw.printf("%3d: Count:%4d Min:%7.2f%c Max:%7.2f%c Avg:%7.2f%c\n", d.day, d.count(), d.getMin(), scale, d.getMax(), scale, d.getAverage(), scale);
+        }
+        pw.flush();
+    }
+}
+public class DailyTemperatureTest {
+    public static void main(String[] args) {
+        DailyTemperatures dailyTemperatures = new DailyTemperatures();
+        dailyTemperatures.readTemperatures(System.in);
+        System.out.println("=== Daily temperatures in Celsius (C) ===");
+        dailyTemperatures.writeDailyStats(System.out, 'C');
+        System.out.println("=== Daily temperatures in Fahrenheit (F) ===");
+        dailyTemperatures.writeDailyStats(System.out, 'F');
+    }
+}
+
+// Vashiot kod ovde
