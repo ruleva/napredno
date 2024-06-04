@@ -1,0 +1,200 @@
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
+import java.util.stream.Collectors;
+
+class DeadlineNotValidException extends Exception
+{
+    DeadlineNotValidException(LocalDateTime d){
+        System.out.println("The deadline "+d.toString()+" has already passed");
+    }
+}
+class Task
+{
+    String name;
+    String description;
+    LocalDateTime deadline;
+    int priority;
+
+    public Task(String name, String description) {
+        this.name = name;
+        this.description = description;
+    }
+
+    public void setDeadline(LocalDateTime deadline) {
+        this.deadline = deadline;
+    }
+
+    public void setPriority(int priority) {
+        this.priority = priority;
+    }
+
+    public int getPriority() {
+        return priority;
+    }
+    public LocalDateTime getDeadline() {
+        if(deadline==null)
+        {
+            return LocalDateTime.of(2022,1,1,0,0,0);
+        }
+        return deadline;
+    }
+
+    @Override
+    public String toString() {
+        if(priority==4)
+        {
+            if(deadline ==null)
+            {
+                return "Task{" +
+                        "name='" + name + '\'' +
+                        ", description='" + description + '\'' +
+                        '}';
+            }
+            return "Task{" +
+                    "name='" + name + '\'' +
+                    ", description='" + description + '\'' +
+                    ", deadline=" + deadline +
+                    '}';
+        }
+        if(deadline ==null)
+        {
+            return "Task{" +
+                    "name='" + name + '\'' +
+                    ", description='" + description + '\'' +
+                    ", priority=" + priority +
+                    '}';
+        }
+        else {
+            return "Task{" +
+                    "name='" + name + '\'' +
+                    ", description='" + description + '\'' +
+                    ", deadline=" + deadline +
+                    ", priority=" + priority +
+                    '}';
+        }
+    }
+}
+class TaskManager
+{
+    Map<String,Set<Task>> map=new HashMap<>();
+     void readTasks (InputStream inputStream) throws DeadlineNotValidException {
+        Scanner sc=new Scanner(inputStream);
+        while(sc.hasNextLine()) {
+            String s = sc.nextLine();
+            String[] parts = s.split(",");
+            try {
+                if (parts.length > 3) {
+                    if (parts[3].length() > 1) {
+                        LocalDateTime ldt = LocalDateTime.parse(parts[3]);
+                        if (ldt.isBefore(LocalDateTime.of(2020, 6, 2, 0, 0, 0))) {
+                            throw new DeadlineNotValidException(ldt);
+                        }
+                    }
+                }
+                Task t = new Task(parts[1], parts[2]);
+                map.putIfAbsent(parts[0], new HashSet<>());
+                if (parts.length > 3) {
+                    if (parts[3].length() == 1) {
+                        t.setPriority(Integer.parseInt(parts[3]));
+                    } else {
+                        LocalDateTime ldt = LocalDateTime.parse(parts[3]);
+                        t.setDeadline(ldt);
+                    }
+                }
+                if (parts.length > 4) {
+                    t.setPriority(Integer.parseInt(parts[4]));
+                } else if(t.getPriority()==0){
+                    t.setPriority(4);
+                }
+                map.get(parts[0]).add(t);
+            } catch (DeadlineNotValidException deadlineNotValidException) {
+
+            }
+        }
+    }
+    void printTasks(OutputStream os, boolean includePriority, boolean includeCategory)
+    {
+        PrintWriter pw=new PrintWriter(os);
+        if(includeCategory&& !includePriority)
+        {
+            List<Task> school= map.get("School").stream().sorted(Comparator.comparing(Task::getDeadline)).collect(Collectors.toList());
+            pw.println("SCHOOL");
+            for(int i=0;i<school.size();i++)
+            {
+                pw.println(school.get(i));
+            }
+            if(map.get("work")!=null) {
+                List<Task> work = map.get("work").stream().sorted(Comparator.comparing(Task::getDeadline)).collect(Collectors.toList());
+                pw.println("WORK");
+                for(int i=0;i<work.size();i++)
+                {
+                    pw.println(work.get(i));
+                }
+            }
+        }
+        if(includePriority)
+        {
+            if(includeCategory)
+            {
+                List<Task> school=map.get("School").stream().sorted(Comparator.comparing(Task::getPriority).thenComparing(Task::getDeadline)).collect(Collectors.toList());
+                pw.println("SCHOOL");
+                for(int i=0;i<school.size();i++)
+                {
+                    pw.println(school.get(i));
+                }
+                if(map.get("work")!=null) {
+                    List<Task> work = map.get("work").stream().sorted(Comparator.comparing(Task::getPriority).thenComparing(Task::getDeadline)).collect(Collectors.toList());
+                    pw.println("WORK");
+                    for(int i=0;i<work.size();i++)
+                    {
+                        pw.println(work.get(i));
+                    }
+                }
+
+            }
+            else {
+                List<Task> lista1=map.values().stream().flatMap(Set::stream).sorted(Comparator.comparing(Task::getPriority).thenComparing(Task::getDeadline)).collect(Collectors.toList());
+                for(int i=0;i<lista1.size();i++)
+                {
+                    pw.println(lista1.get(i));
+                }
+            }
+        }
+        else if(!includePriority&&!includeCategory){
+            List<Task> lista2=map.values().stream().flatMap(Set::stream).sorted(Comparator.comparing(Task::getDeadline)).collect(Collectors.toList());
+            for(int i=0;i<lista2.size();i++)
+            {
+                pw.println(lista2.get(i));
+            }
+        }
+        pw.flush();
+    }
+}
+public class TasksManagerTest {
+
+    public static void main(String[] args) throws DeadlineNotValidException {
+
+        TaskManager manager = new TaskManager();
+
+        System.out.println("Tasks reading");
+        manager.readTasks(System.in);
+        System.out.println("By categories with priority");
+        manager.printTasks(System.out, true, true);
+        System.out.println("-------------------------");
+        System.out.println("By categories without priority");
+        manager.printTasks(System.out, false, true);
+        System.out.println("-------------------------");
+        System.out.println("All tasks without priority");
+        manager.printTasks(System.out, false, false);
+        System.out.println("-------------------------");
+        System.out.println("All tasks with priority");
+        manager.printTasks(System.out, true, false);
+        System.out.println("-------------------------");
+
+    }
+}
