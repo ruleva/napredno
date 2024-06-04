@@ -1,0 +1,138 @@
+//package mk.ukim.finki.midterm;
+
+import java.util.*;
+import java.util.stream.Collectors;
+class InvalidPointsException extends Exception{
+    InvalidPointsException(){
+        super();
+    }
+}
+class Student {
+    String index;
+    String name;
+    int poeniPrv;
+    int poeniVtor;
+    int poeniLabs;
+
+    public double getSummaryPoints() {
+        return poeniPrv * 0.45 + poeniVtor * 0.45 + poeniLabs;
+    }
+
+    public int getGrade() {
+        if(getSummaryPoints()<50)
+        {
+            return 5;
+        }
+        return (int) (getSummaryPoints()/10)+1;
+    }
+
+    public Student(String index, String name) {
+        this.index = index;
+        this.name = name;
+    }
+
+    public void setPoeniPrv(int poeniPrv) {
+        this.poeniPrv = poeniPrv;
+    }
+
+    public void setPoeniVtor(int poeniVtor) {
+        this.poeniVtor = poeniVtor;
+    }
+
+    public void setPoeniLabs(int poeniLabs) {
+        this.poeniLabs = poeniLabs;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("ID: %s Name: %s First midterm: %d Second midterm %d Labs: %d Summary points: %.2f Grade: %d",index,name,poeniPrv,poeniVtor,poeniLabs,getSummaryPoints(),getGrade());
+    }
+}
+class AdvancedProgrammingCourse{
+    Map<String,Student> students=new TreeMap<>();
+    public void addStudent (Student s){
+        students.put(s.index,s);
+    }
+    public void updateStudent (String idNumber, String activity, int points) {
+       try {
+           if (Objects.equals(activity, "midterm1")) {
+               if (points > 100) throw new InvalidPointsException();
+               students.get(idNumber).setPoeniPrv(points);
+           } else if (activity.equals("midterm2")) {
+               if (points > 100) throw new InvalidPointsException();
+               students.get(idNumber).setPoeniVtor(points);
+           } else {
+               if (points > 10) throw new InvalidPointsException();
+               students.get(idNumber).setPoeniLabs(points);
+           }
+       }
+       catch (InvalidPointsException ignored){}
+    }
+    public List<Student> getFirstNStudents (int n){
+        return students.values().stream()
+                .sorted(Comparator.comparing(Student::getSummaryPoints).reversed())
+                .limit(n)
+                .collect(Collectors.toList());
+    }
+    public Map<Integer,Integer> getGradeDistribution(){
+         Map<Integer,Integer> map=new TreeMap<>();
+         for(int i=5;i<=10;i++)
+         {
+             map.putIfAbsent(i,0);
+         }
+         students.values()
+                 .forEach(i->map.put(i.getGrade(),map.get(i.getGrade())+1));
+         return map;
+    }
+    public void printStatistics(){
+      List<Student> studentsPass=students.values().stream().filter(i->i.getGrade()>5).collect(Collectors.toList());
+      double average=studentsPass.stream().mapToDouble(Student::getSummaryPoints)
+              .average().getAsDouble();
+      double max=studentsPass.stream().mapToDouble(Student::getSummaryPoints)
+              .max().getAsDouble();
+      double min=studentsPass.stream().mapToDouble(Student::getSummaryPoints)
+              .min().getAsDouble();
+        System.out.printf("Count: %d Min: %.2f Average: %.2f Max: %.2f",studentsPass.size(),min,average,max);
+    }
+}
+public class CourseTest {
+
+    public static void printStudents(List<Student> students) {
+        students.forEach(System.out::println);
+    }
+
+    public static void printMap(Map<Integer, Integer> map) {
+        map.forEach((k, v) -> System.out.printf("%d -> %d%n", k, v));
+    }
+
+    public static void main(String[] args) {
+        AdvancedProgrammingCourse advancedProgrammingCourse = new AdvancedProgrammingCourse();
+
+        Scanner sc = new Scanner(System.in);
+
+        while (sc.hasNextLine()) {
+            String line = sc.nextLine();
+            String[] parts = line.split("\\s+");
+
+            String command = parts[0];
+
+            if (command.equals("addStudent")) {
+                String id = parts[1];
+                String name = parts[2];
+                advancedProgrammingCourse.addStudent(new Student(id, name));
+            } else if (command.equals("updateStudent")) {
+                String idNumber = parts[1];
+                String activity = parts[2];
+                int points = Integer.parseInt(parts[3]);
+                advancedProgrammingCourse.updateStudent(idNumber, activity, points);
+            } else if (command.equals("getFirstNStudents")) {
+                int n = Integer.parseInt(parts[1]);
+                printStudents(advancedProgrammingCourse.getFirstNStudents(n));
+            } else if (command.equals("getGradeDistribution")) {
+                printMap(advancedProgrammingCourse.getGradeDistribution());
+            } else {
+                advancedProgrammingCourse.printStatistics();
+            }
+        }
+    }
+}
