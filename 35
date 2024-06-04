@@ -1,0 +1,64 @@
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+class Item{
+    String payment_name;
+    int price;
+    public int getPrice() {
+        return price;
+    }
+
+    public Item(String payment_name, int price) {
+        this.payment_name = payment_name;
+        this.price = price;
+    }
+
+}
+class OnlinePayments{
+    Map<String, List<Item>> map=new HashMap<>();
+    void readItems(InputStream is){
+        Scanner sc=new Scanner(is);
+        while (sc.hasNextLine())
+        {
+            String s=sc.nextLine();
+            String [] parts=s.split(";");
+            Item item=new Item(parts[1],Integer.parseInt(parts[2]));
+            map.putIfAbsent(parts[0],new ArrayList<>());
+            map.get(parts[0]).add(item);
+        }
+    }
+    int netoPriceByStudent(String s){
+        return map.get(s).stream().mapToInt(Item::getPrice).sum();
+    }
+    int feeByStudent(String s) {
+        int fee = (int) Math.round(netoPriceByStudent(s) * (1.14 / 100));
+        if (fee <3) {
+            return 3;
+        } else if (fee > 300) {
+            return 300;
+        } else return fee;
+    }
+    void printStudentReport (String index, OutputStream os){
+        if(!map.containsKey(index)){
+            System.out.println("Student "+index+" not found!");
+            return;
+        }
+        int j=1;
+        System.out.printf("Student: %s Net: %d Fee: %d Total: %d\nItems:\n",index,netoPriceByStudent(index),feeByStudent(index),netoPriceByStudent(index)+feeByStudent(index));
+        List<Item> list=map.get(index).stream().sorted(Comparator.comparing(Item::getPrice).reversed()).collect(Collectors.toList());
+        for(Item i:list){
+            System.out.printf("%d. %s %d\n",j++,i.payment_name,i.price);
+        }
+    }
+}
+public class OnlinePaymentsTest {
+    public static void main(String[] args) {
+        OnlinePayments onlinePayments = new OnlinePayments();
+
+        onlinePayments.readItems(System.in);
+
+        IntStream.range(151020, 151025).mapToObj(String::valueOf).forEach(id -> onlinePayments.printStudentReport(id, System.out));
+    }
+}
