@@ -1,0 +1,99 @@
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.DoubleStream;
+
+class Movie{
+    String title;
+    int [] ratings;
+    double finalCoef;
+
+    public Movie(String title, int[] ratings) {
+        this.title = title;
+        this.ratings = ratings;
+    }
+    public double getRating(){
+        return Arrays.stream(ratings).average().getAsDouble();
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setCoefFinal(double s)
+    {
+        this.finalCoef=s;
+    }
+
+    public double getFinalCoef() {
+        return finalCoef;
+    }
+
+    public double getCoef(){
+        return getRating()*ratings.length;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%s (%.2f) of %d ratings",title,getRating(),ratings.length);
+    }
+}
+class MoviesList
+{
+    List<Movie> movies=new ArrayList<>();
+    public void addMovie(String title, int[] ratings){
+        Movie m=new Movie(title,ratings);
+        movies.add(m);
+    }
+    public List<Movie> top10ByAvgRating(){
+        return movies.stream().sorted(Comparator.comparing(Movie::getRating)
+                .reversed().thenComparing(Movie::getTitle)).limit(10)
+                .collect(Collectors.toList());
+    }
+    public List<Movie> top10ByRatingCoef(){
+        for(Movie m:movies)
+        {
+            m.setCoefFinal(m.getCoef()/movies.size());
+        }
+//        List<Movie> movies1=movies.stream().sorted(Comparator.comparing(Movie::getFinalCoef).reversed().thenComparing(Movie::getTitle)).limit(10).collect(Collectors.toList());
+//        for(Movie movie:movies1)
+//        {
+//            System.out.println(movie.getFinalCoef());
+//        }
+
+        return movies.stream()
+                .sorted(Comparator.comparing(Movie::getFinalCoef)
+                        .reversed().thenComparing(Movie::getTitle))
+                .limit(10).collect(Collectors.toList());
+    }
+}
+public class MoviesTest {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        MoviesList moviesList = new MoviesList();
+        int n = scanner.nextInt();
+        scanner.nextLine();
+        for (int i = 0; i < n; ++i) {
+            String title = scanner.nextLine();
+            int x = scanner.nextInt();
+            int[] ratings = new int[x];
+            for (int j = 0; j < x; ++j) {
+                ratings[j] = scanner.nextInt();
+            }
+            scanner.nextLine();
+            moviesList.addMovie(title, ratings);
+        }
+        scanner.close();
+        List<Movie> movies = moviesList.top10ByAvgRating();
+        System.out.println("=== TOP 10 BY AVERAGE RATING ===");
+        for (Movie movie : movies) {
+            System.out.println(movie);
+        }
+        movies = moviesList.top10ByRatingCoef();
+        System.out.println("=== TOP 10 BY RATING COEFFICIENT ===");
+        for (Movie movie : movies) {
+            System.out.println(movie);
+        }
+    }
+}
+
+// vashiot kod ovde
