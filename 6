@@ -1,0 +1,185 @@
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.util.*;
+import java.util.stream.Collectors;
+
+class Employee
+{
+    String ID;
+    String level;
+    double salary;
+    public double getSalary(){return 0.0;}
+
+    public void setSalary(double salary) {
+        this.salary = salary;
+    }
+
+    public String getLevel() {
+        return level;
+    }
+
+    public Employee(String ID, String level) {
+        this.ID = ID;
+        this.level = level;
+        salary=0;
+    }
+    public static Comparator<Employee> comparator=Comparator.comparing(Employee::getSalary).reversed();
+}
+class HourlyEmployee extends Employee
+{
+    double hours;
+    public HourlyEmployee(String ID, String level,double hours) {
+        super(ID, level);
+        this.hours=hours;
+        salary=0;
+    }
+
+    @Override
+    public double getSalary() {
+        return this.salary;
+    }
+    @Override
+    public void setSalary(double salary) {
+        if(hours<=40.00)
+        {
+            this.salary= salary*hours;
+        }
+        else {
+            this.salary=40.00*salary+(hours-40.00)*salary*1.5;
+        }
+    }
+    @Override
+    public String toString() {
+        double h=0;
+        double hh=hours;
+        if(hours>40.00)
+        {
+            h=(hours-40.00);
+            hh=40;
+        }
+
+        return String.format("Employee ID: %s Level: %s Salary: %.02f Regular hours: %.02f Overtime hours: %.02f",ID,level,getSalary(),hh,h);
+    }
+    public static Comparator<Employee> comparator=Comparator.comparing(Employee::getSalary).reversed();
+
+}
+class FreelanceEmployee extends Employee
+{
+    List<Integer> ticketPoints=new ArrayList<>();
+
+    public FreelanceEmployee(String ID, String level, List<Integer> ticketPoints) {
+        super(ID, level);
+        this.ticketPoints = ticketPoints;
+        salary=0;
+    }
+    int ticketSum()
+    {
+        int sum=0;
+        for(int i=0;i<ticketPoints.size();i++)
+        {
+            sum+=ticketPoints.get(i);
+        }
+        return sum;
+    }
+    @Override
+    public double getSalary() {
+        return this.salary;
+    }
+    public void setSalary(double salary)
+    {
+       this.salary=ticketSum()*salary;
+    }
+    @Override
+    public String toString() {
+        return String.format("Employee ID: %s Level: %s Salary: %.02f Tickets count: %d Tickets points: %d",ID,level,getSalary(),ticketPoints.size(),ticketSum());
+    }
+    public static Comparator<Employee> comparator=Comparator.comparing(Employee::getSalary).reversed();
+
+}
+class PayrollSystem
+{
+    Map<String,Double> hourlyRateByLevel;
+    Map<String,Double> ticketRateByLevel;
+    Map<String, Collection<Employee>> collectionMap;
+    PayrollSystem(Map<String,Double> hourlyRateByLevel, Map<String,Double> ticketRateByLevel)
+    {
+        this.hourlyRateByLevel=hourlyRateByLevel;
+        this.ticketRateByLevel=ticketRateByLevel;
+        collectionMap=new HashMap<>();
+    }
+    void readEmployees (InputStream is) {
+        Scanner sc = new Scanner(is);
+        while (sc.hasNextLine()) {
+            String s = sc.nextLine();
+            String[] strings = s.split(";");
+            if (strings[0].equals("H")) {
+                HourlyEmployee hourlyEmployee = new HourlyEmployee(strings[1], strings[2], Double.parseDouble(strings[3]));
+                collectionMap.putIfAbsent(strings[2], new TreeSet<>(HourlyEmployee.comparator));
+                collectionMap.get(strings[2]).add(hourlyEmployee);
+                double salary= hourlyRateByLevel.get(strings[2]);
+                hourlyEmployee.setSalary(salary);
+
+            } else {
+                List<Integer> ticketPoints = new ArrayList<>();
+                for (int i = 3; i < strings.length; i++) {
+                    ticketPoints.add(Integer.parseInt(strings[i]));
+                }
+                FreelanceEmployee freelanceEmployee = new FreelanceEmployee(strings[1], strings[2], ticketPoints);
+                collectionMap.putIfAbsent(strings[2], new TreeSet<>(FreelanceEmployee.comparator));
+                collectionMap.get(strings[2]).add(freelanceEmployee);
+                double salary=ticketRateByLevel.get(strings[2]);
+                freelanceEmployee.setSalary(salary);
+            }
+        }
+    }
+    Map<String, Collection<Employee>> printEmployeesByLevels (OutputStream os, Set<String> levels)
+    {
+        PrintWriter pw=new PrintWriter(os);
+        Map<String, Collection<Employee>> map=new TreeMap<>(Comparator.naturalOrder());
+        for(String level:levels)
+        {
+            if(collectionMap.containsKey(level))
+            {
+               List<Employee> employees=collectionMap.get(level).stream().collect(Collectors.toList());
+               employees.sort(Comparator.comparing(Employee::getSalary).reversed());
+               map.putIfAbsent(level,new HashSet<>());
+               map.put(level,employees);
+            }
+        }
+        pw.flush();
+        return map;
+    }
+}
+public class PayrollSystemTest {
+
+    public static void main(String[] args) {
+
+        Map<String, Double> hourlyRateByLevel = new LinkedHashMap<>();
+        Map<String, Double> ticketRateByLevel = new LinkedHashMap<>();
+        for (int i = 1; i <= 10; i++) {
+            hourlyRateByLevel.put("level" + i, 10 + i * 2.2);
+            ticketRateByLevel.put("level" + i, 5 + i * 2.5);
+        }
+
+        PayrollSystem payrollSystem = new PayrollSystem(hourlyRateByLevel, ticketRateByLevel);
+
+        System.out.println("READING OF THE EMPLOYEES DATA");
+        payrollSystem.readEmployees(System.in);
+
+        System.out.println("PRINTING EMPLOYEES BY LEVEL");
+        Set<String> levels = new LinkedHashSet<>();
+        for (int i=5;i<=10;i++) {
+            levels.add("level"+i);
+        }
+        Map<String, Collection<Employee>> result = payrollSystem.printEmployeesByLevels(System.out, levels);
+        result.forEach((level, employees) -> {
+            System.out.println("LEVEL: "+ level);
+            System.out.println("Employees: ");
+            employees.forEach(System.out::println);
+            System.out.println("------------");
+        });
+
+
+    }
+}
