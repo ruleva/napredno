@@ -1,0 +1,146 @@
+import java.io.InputStream;
+import java.util.*;
+import java.util.stream.Collectors;
+
+/**
+ * Discounts
+ */
+class Price
+{
+    int discount;
+    int price;
+
+    public Price(int discount, int price) {
+        this.discount = discount;
+        this.price = price;
+    }
+    public int discountPercentage()
+    {
+        double a=price-discount;
+        a/=price;
+        a*=100;
+        return (int) a;
+
+    }
+    public int discountAmount()
+    {
+        return price-discount;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%2d%% %d/%d",discountPercentage(),discount,price);
+    }
+}
+class Store
+{
+   String name;
+   List<Price> ceni=new ArrayList<>();
+
+    public Store(String name, String[] ceni) {
+        this.name = name;
+        for (int i = 0; i < ceni.length; i++) {
+            String[] s = ceni[i].split(":");
+            Price p = new Price(Integer.parseInt(s[0]), Integer.parseInt(s[1]));
+            this.ceni.add(p);
+        }
+    }
+    public double averageDiscount()
+    {
+       // return ceni.stream().collect(Collectors.averagingInt(Price::discountPercentage));
+        double sum=0.0;
+        for(int i=0;i<ceni.size();i++)
+        {
+            sum+=ceni.get(i).discountPercentage();
+        }
+        return sum/ceni.size();
+    }
+    public int totalDiscount()
+    {
+        int sum=0;
+        for(int i=0;i<ceni.size();i++)
+        {
+            sum+=ceni.get(i).discountAmount();
+        }
+        return sum;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format("%s\nAverage discount: %.1f%%\nTotal discount: %d\n", name, averageDiscount(), totalDiscount()));
+        Comparator<Price> comparator=Comparator.comparing(Price::discountPercentage).thenComparing(Price::discountAmount).reversed();
+        ceni.sort(comparator);
+        for (int i = 0; i < ceni.size()-1; i++) {
+            sb.append(ceni.get(i));
+            sb.append("\n");
+        }
+        sb.append(ceni.get(ceni.size()-1));
+        return sb.toString();
+    }
+}
+class Discounts
+{
+    List<Store> stores;
+
+    public Discounts() {
+       stores=new ArrayList<>();
+    }
+
+    public int readStores(InputStream inputStream) {
+        Scanner sc = new Scanner(inputStream);
+        int counter = 0;
+        while (sc.hasNextLine()) {
+            String line = sc.nextLine();
+            String[] parts = line.split("\\s+");
+            String[] ceni = new String[parts.length - 1];
+            int j = 0;
+            for (int i = 1; i < parts.length; i++) {
+                ceni[j++] = parts[i];
+            }
+            Store s = new Store(parts[0], ceni);
+            stores.add(s);
+            counter++;
+        }
+        return counter;
+    }
+    public List<Store> byAverageDiscount()
+    {
+       List<Store> list=new ArrayList<>();
+        Comparator<Store> comparator =Comparator.comparing(Store::averageDiscount).thenComparing(Store::getName).reversed();
+        stores.sort(comparator);
+        for(int i=0;i<3;i++)
+        {
+            list.add(stores.get(i));
+        }
+       return list;
+    }
+    public List<Store> byTotalDiscount()
+    {
+        List<Store> list=new ArrayList<>();
+        Comparator<Store> comparator =Comparator.comparing(Store::totalDiscount).thenComparing(Store::getName);
+        stores.sort(comparator);
+        for(int i=0;i<3;i++)
+        {
+            list.add(stores.get(i));
+        }
+        return list;
+    }
+}
+public class DiscountsTest {
+    public static void main(String[] args) {
+        Discounts discounts = new Discounts();
+        int stores = discounts.readStores(System.in);
+        System.out.println("Stores read: " + stores);
+        System.out.println("=== By average discount ===");
+        discounts.byAverageDiscount().forEach(System.out::println);
+        System.out.println("=== By total discount ===");
+        discounts.byTotalDiscount().forEach(System.out::println);
+    }
+}
+
+// Vashiot kod ovde
