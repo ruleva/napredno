@@ -1,0 +1,114 @@
+import java.util.*;
+import java.util.stream.Collectors;
+class BlockContainer<T extends Comparable<T>>{
+    List<Set<T>> list;
+    int n;
+    public BlockContainer(int n){
+        list=new ArrayList<>();
+        this.n=n;
+    }
+    public void add(T a) {
+        int flag = 0;
+        if(list.isEmpty())
+        {
+            list.add(new TreeSet<>());
+            list.get(0).add(a);
+        }else {
+            for (int i = 0; i < list.size(); i++) {
+                if (list.get(i).size() < n) {
+                    list.get(i).add(a);
+                    flag = 1;
+                }
+            }
+            if (flag == 0) {
+                list.add(new TreeSet<>());
+                list.get(list.size() - 1).add(a);
+            }
+        }
+    }
+    public boolean remove(T a){
+        if(list.get(list.size()-1).contains(a)) {
+            list.get(list.size() - 1).remove(a);
+            if(list.get(list.size()-1).isEmpty())
+            {
+                list.remove(list.size()-1);
+            }
+            return true;
+        }
+        else return false;
+    }
+    public void sort()
+    {
+        List<T> list1=list.stream().flatMap(Set::stream).sorted(Comparator.naturalOrder()).collect(Collectors.toList());
+        int f=list.size();
+        int k=0;
+        List<Set<T>> sort=new ArrayList<>(f);
+        for(int i=0;i<f;i++)
+        {
+            int j=n;
+            Set<T> list2=new TreeSet<>();
+            while (j>0&&k< list1.size())
+            {
+                list2.add(list1.get(k));
+                k++;
+                j--;
+            }
+            sort.add(list2);
+        }
+       list=sort;
+
+    }
+    public String toString(){
+        StringBuilder s=new StringBuilder();
+        for (Set<T> ts : list) {
+            if(ts.equals(list.get(list.size()-1)))
+            {
+                break;
+            }
+            s.append(ts).append(",");
+        }
+        s.append(list.get(list.size()-1));
+        return s.toString();
+    }
+}
+public class BlockContainerTest {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        int n = scanner.nextInt();
+        int size = scanner.nextInt();
+        BlockContainer<Integer> integerBC = new BlockContainer<Integer>(size);
+        scanner.nextLine();
+        Integer lastInteger = null;
+        for(int i = 0; i < n; ++i) {
+            int element = scanner.nextInt();
+            lastInteger = element;
+            integerBC.add(element);
+        }
+        System.out.println("+++++ Integer Block Container +++++");
+        System.out.println(integerBC);
+        System.out.println("+++++ Removing element +++++");
+        integerBC.remove(lastInteger);
+        System.out.println("+++++ Sorting container +++++");
+        integerBC.sort();
+        System.out.println(integerBC);
+        BlockContainer<String> stringBC = new BlockContainer<String>(size);
+        String lastString = null;
+        for(int i = 0; i < n; ++i) {
+            String element = scanner.next();
+            lastString = element;
+            stringBC.add(element);
+        }
+        System.out.println("+++++ String Block Container +++++");
+        System.out.println(stringBC);
+        System.out.println("+++++ Removing element +++++");
+        stringBC.remove(lastString);
+        System.out.println("+++++ Sorting container +++++");
+        stringBC.sort();
+        System.out.println(stringBC);
+    }
+}
+
+// Вашиот код овде
+
+
+
