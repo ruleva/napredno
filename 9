@@ -1,0 +1,156 @@
+import java.util.*;
+import java.util.stream.Collectors;
+
+class SeatTakenException extends Exception
+{
+    SeatTakenException()
+    {
+        super.getMessage();
+    }
+}
+class SeatNotAllowedException extends Exception
+{
+    SeatNotAllowedException()
+    {
+        super.getMessage();
+    }
+}
+class Sector
+{
+    String kod;
+    int brojnamesta;
+    boolean [] zafatenost;
+    int type=0;
+    public Sector(String kod, int brojnamesta) {
+        this.kod = kod;
+        this.brojnamesta = brojnamesta;
+        this.zafatenost = new boolean[brojnamesta];
+        for(int i=0;i< brojnamesta;i++)
+        {
+            this.zafatenost[i]=false;
+        }
+    }
+
+    public void setType(int type) {
+        this.type = type;
+    }
+
+    public int getType() {
+        return type;
+    }
+
+    public String getKod() {
+        return kod;
+    }
+
+    public void setZafatenost(int i) {
+        zafatenost[i]=true;
+    }
+
+    public boolean getZafatenost(int i) {
+        return zafatenost[i];
+    }
+    public int slobodniMesta()
+    {
+        int c=0;
+        for(int i=0;i< zafatenost.length;i++)
+        {
+            if(!zafatenost[i])
+            {
+                c++;
+            }
+        }
+        return c;
+    }
+//    public double slob()
+//    {
+//        return zafatenost.length-slobodniMesta()
+//    }
+
+    @Override
+    public String toString() {
+        return String.format("%s\t%d/%d\t%.1f%%",kod,slobodniMesta(),zafatenost.length,(1-((double)slobodniMesta()/ zafatenost.length))*100);
+    }
+}
+class Stadium
+{
+    String name;
+    List<Sector> sectorList=new ArrayList<>();
+
+    public Stadium(String name) {
+        this.name = name;
+    }
+    void createSectors(String[] sectorNames, int[] sizes)
+    {
+        for(int j=0;j<sectorNames.length;j++)
+        {
+            sectorList.add(new Sector(sectorNames[j],sizes[j]));
+        }
+    }
+    void buyTicket(String sectorName, int seat, int type) throws SeatTakenException, SeatNotAllowedException {
+        for (int i = 0; i < sectorList.size(); i++) {
+            if (sectorName.equals(sectorList.get(i).kod)) {
+                if (sectorList.get(i).getZafatenost(seat-1)) {
+                    //System.out.println(seat+"         "+sectorList.get(i).getZafatenost(seat-1));
+                    throw new SeatTakenException();
+                } else {
+                    if(type==0)
+                    {
+                        sectorList.get(i).setZafatenost(seat-1);
+                       // sectorList.get(i).setType(type);
+                    }
+                    else {
+
+                            if (sectorList.get(i).getType() != 0 && type != sectorList.get(i).getType()) {
+                                throw new SeatNotAllowedException();
+                            }
+
+                        sectorList.get(i).setZafatenost(seat-1);
+                        sectorList.get(i).setType(type);
+                    }
+                }
+            }
+        }
+    }
+    void showSectors()
+    {
+        List<Sector> sektori=sectorList.stream().sorted(Comparator.comparing(Sector::slobodniMesta).reversed().thenComparing(Sector::getKod)).collect(Collectors.toList());
+        for(int i=0;i<sektori.size();i++)
+        {
+            System.out.println(sektori.get(i));
+        }
+    }
+}
+public class StaduimTest {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        int n = scanner.nextInt();
+        scanner.nextLine();
+        String[] sectorNames = new String[n];
+        int[] sectorSizes = new int[n];
+        String name = scanner.nextLine();
+        for (int i = 0; i < n; ++i) {
+            String line = scanner.nextLine();
+            String[] parts = line.split(";");
+            sectorNames[i] = parts[0];
+            sectorSizes[i] = Integer.parseInt(parts[1]);
+        }
+        Stadium stadium = new Stadium(name);
+        stadium.createSectors(sectorNames, sectorSizes);
+        n = scanner.nextInt();
+        scanner.nextLine();
+        for (int i = 0; i < n; ++i) {
+            String line = scanner.nextLine();
+            String[] parts = line.split(";");
+            try {
+                stadium.buyTicket(parts[0], Integer.parseInt(parts[1]),
+                        Integer.parseInt(parts[2]));
+            } catch (SeatNotAllowedException e) {
+                System.out.println("SeatNotAllowedException");
+            } catch (SeatTakenException e) {
+                System.out.println("SeatTakenException");
+            }
+        }
+        stadium.showSectors();
+    }
+}
